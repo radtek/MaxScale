@@ -2186,12 +2186,17 @@ bool MariaDBServer::kick_out_super_users(GeneralOpData& op)
     bool error = false;
     Duration time_remaining = op.time_remaining;
     auto error_out = op.error_out;
-    // Select conn id and username from live connections ...
-    string get_ids_query = "SELECT P.id,P.user FROM information_schema.PROCESSLIST as P "
+    // Only select unique rows...
+    string get_ids_query = "SELECT DISTINCT * FROM ("
+                           // select conn id and username from live connections ...
+                           "SELECT P.id,P.user FROM information_schema.PROCESSLIST as P "
                            // match with user information ...
                            "INNER JOIN mysql.user as U ON (U.user = P.user) WHERE "
-                           // where the user has super-privileges but is not the current user.
-                           "(U.Super_priv = 'Y' AND P.id != (SELECT CONNECTION_ID()));";
+                           // where the user has super-privileges, is not replicating ...
+                           "(U.Super_priv = 'Y' AND P.COMMAND != 'Binlog Dump' "
+                           // and is not the current user.
+                           "AND P.id != (SELECT CONNECTION_ID())));";
+
     string error_msg;
     unsigned int error_num = 0;
     auto res = execute_query(get_ids_query, &error_msg, &error_num);
