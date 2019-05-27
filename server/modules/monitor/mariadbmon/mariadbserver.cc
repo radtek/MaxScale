@@ -2195,7 +2195,7 @@ bool MariaDBServer::kick_out_super_users(GeneralOpData& op)
                            // where the user has super-privileges, is not replicating ...
                            "(U.Super_priv = 'Y' AND P.COMMAND != 'Binlog Dump' "
                            // and is not the current user.
-                           "AND P.id != (SELECT CONNECTION_ID())));";
+                           "AND P.id != (SELECT CONNECTION_ID()))) as I;";
 
     string error_msg;
     unsigned int error_num = 0;
